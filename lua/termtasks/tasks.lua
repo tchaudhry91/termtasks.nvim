@@ -1,13 +1,14 @@
 local M = {}
 
+
 function M.getAvailableTasks()
+	local taskList = {}
 	local dir = getWorkDir()
 	local files = listTaskFiles(dir)
 	if files == nil then
 		print("Could not find any Taskfiles in the git root or pwd")
 		return nil
 	end
-	local taskList = {}
 	for _, fname in ipairs(files) do
 		local tasks = parseTaskFile(fname)
 		if tasks ~= nil then
@@ -16,7 +17,19 @@ function M.getAvailableTasks()
 			end
 		end
 	end
-	return taskList
+	local inputL = {}
+	for i, task in ipairs(taskList) do
+		table.insert(inputL, i .. '. ' .. task)
+	end
+	local choice = vim.fn.inputlist(inputL)
+	if choice ~= nil then
+		executeTask(taskList[choice])
+	end
+end
+
+function executeTask(task)
+	local sourceFile = string.match(task, '%((.*)%)')
+	local taskName = string.match(task, '(.*) %(')
 end
 
 function parseTaskFile(fname)
@@ -25,7 +38,7 @@ function parseTaskFile(fname)
 		local contents = io.popen("task --list-all 2> /dev/null", "r")
 		for line in contents:lines() do
 			for task in string.gmatch(line, '%*%s(.*):') do
-				table.insert(tasks, "Taskfile.yml:" .. task)
+				table.insert(tasks, task .. ' (' .. fname .. ')')
 			end
 		end
 	end
